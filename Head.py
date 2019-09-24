@@ -8,6 +8,7 @@ import struct
 import copy
 import pandas as pd
 import csv
+from pathlib import Path
 from tkinter import *
 
 plt.style.use("seaborn-ticks")  # Seleciona o estilo do grafico
@@ -17,7 +18,7 @@ plt.style.use("seaborn-ticks")  # Seleciona o estilo do grafico
 # 'seaborn-whitegrid', 'fivethirtyeight', 'grayscale', 'seaborn-white', 'seaborn-deep', 'seaborn-darkgrid']
 
 class serialPlot:  # define classe serialPlot
-    def __init__(self,serialPort="COM12",serialBaud=9600,plotLength=100,dataNumBytes=2,numPlots=1,tempo_exposicao=0,tempo_recuperacao=0,ciclos=0,numero_amostragem=0):
+    def __init__(self,serialPort = "COM12", serialBaud = 9600, plotLength = 100, dataNumBytes = 2, numPlots = 1, tempo_exposicao = 0, tempo_recuperacao = 0, ciclos = 0, numero_amostragem = 0,filename = "filename"):
         # variaveis definidas para a classe serialPlot
         # ----------------------
         self.port = serialPort
@@ -46,6 +47,7 @@ class serialPlot:  # define classe serialPlot
         self.csvData = []
         self.tempo = 0
         self.i = 0
+        self.filename = filename
         # ----------------------
 
         # Comeca a comunicacao serial com o arduino
@@ -61,10 +63,10 @@ class serialPlot:  # define classe serialPlot
         # Envia para o arduino as entradas de tempo_exposicao, tempo_recuperacao e ciclos
         # ---------------------------------------------------------------------------
         time.sleep(1)
-        self.serialConnection.write(f"i;l;{self.tempo_exposicao:05d};f\n".encode())
-        self.serialConnection.write(f"i;r;{self.tempo_recuperacao:05d};f\n".encode())
-        self.serialConnection.write(f"i;c;{self.ciclos:05d};f\n".encode())
-        self.serialConnection.write(f"i;a;{self.numero_amostragem:05d};f\n".encode())
+        self.serialConnection.write(f"i;l;{self.tempo_exposicao:05f};f\n".encode())
+        self.serialConnection.write(f"i;r;{self.tempo_recuperacao:05f};f\n".encode())
+        self.serialConnection.write(f"i;c;{self.ciclos:05f};f\n".encode())
+        self.serialConnection.write(f"i;a;{self.numero_amostragem:05f};f\n".encode())
         # ---------------------------------------------------------------------------
 
         if self.thread == None:
@@ -91,7 +93,8 @@ class serialPlot:  # define classe serialPlot
                 self.csvData.append(self.tempo)
             self.previousTimer = currentTimer
             self.finish_time = round(((self.tempo_exposicao + self.tempo_recuperacao)*self.ciclos)-self.tempo,2)
-            timeText.set_text("Tempo = " + str(self.tempo) + "s, Restante = " + str(self.finish_time) + "s, Intevalo = " + str(self.numero_amostragem) + "s")
+            self.interval = round((self.tempo_exposicao + self.tempo_recuperacao)/self.numero_amostragem,3)
+            timeText.set_text("Tempo = " + str(self.tempo) + "s, Restante = " + str(self.finish_time) + "s, Intevalo = " + str(self.interval) + "s")
             privateData = copy.deepcopy(self.rawData[:])  # so that the 3 values in our plots will be synchronized to the same sample time
             for i in range(self.numPlots):
                 data = privateData[(i * self.dataNumBytes) : (self.dataNumBytes + i * self.dataNumBytes)]
@@ -118,10 +121,12 @@ class serialPlot:  # define classe serialPlot
         self.thread.join()
         self.serialConnection.close()
         print("Disconnected...")
-        with open("IC.csv", "w", newline="") as f:
-            thewriter = csv.writer(f)
+        path = Path('c:/Users/renzo/Documents/IC')
+        fpath = (path / self.filename).with_suffix('.csv')
+        with fpath.open(mode='w+') as csvfile:
+            thewriter = csv.writer(csvfile)
             thewriter.writerow(self.csvData)
-        f.close()
+        csvfile.close()
 
 def main():
     # Codigo do usuario
@@ -157,6 +162,9 @@ def main():
             self.instruction = Label(self, text = "Numero de sensores(max = 10):",fg = "black", font =('arial',10,'bold'),padx = 50, pady = 10, bd = 1)
             self.instruction.grid(row = 5, column = 0)
 
+            self.instruction = Label(self, text = "Nome do arquivo csv:",fg = "black", font =('arial',10,'bold'),padx = 50, pady = 10, bd = 1)
+            self.instruction.grid(row = 6, column = 0)
+
             self.portName = Entry(self)
             self.portName.grid(row = 0, column = 1, sticky = W)
 
@@ -175,23 +183,26 @@ def main():
             self.numPlots = Entry(self)
             self.numPlots.grid(row = 5, column = 1, sticky = W)
 
+            self.filename = Entry(self)
+            self.filename.grid(row = 6, column = 1, sticky = W)
+
             self.simulation_button = Button(self, text = "Tempo total", command = self.simulation,fg = "black", font =('arial',10,'bold'),padx = 50, pady = 10, bd = 1)
-            self.simulation_button.grid(row = 6, column = 2, sticky = W)
+            self.simulation_button.grid(row = 7, column = 2, sticky = W)
 
             self.start_button = Button(self, text = "Start", command = self.start,fg = "black", font =('arial',10,'bold'),padx = 50, pady = 10, bd = 1)
-            self.start_button.grid(row = 6, column = 1, sticky = W)
+            self.start_button.grid(row = 7, column = 1, sticky = W)
 
         def simulation(self):
-            tempo_exposicao = self.Tempo_liberacao.get()
-            tempo_recuperacao = self.Tempo_recuperacao.get()
-            ciclos = self.ciclos.get()
-            numero_amostragem = self.numero_amostragem.get()
+            tempo_exposicao = float(self.Tempo_liberacao.get())
+            tempo_recuperacao = float(self.Tempo_recuperacao.get())
+            ciclos = int(self.ciclos.get())
+            numero_amostragem = float(self.numero_amostragem.get())
             portName = self.portName.get()
             numPlots = self.numPlots.get()
-            tempo_total = (tempo_exposicao+tempo_recuperacao)*ciclos*1000
+            tempo_total = (tempo_exposicao + tempo_recuperacao)*ciclos
 
-            self.instruction = Label(self, text = "Tempo total do ensaio:" + str(tempo_total) + "s",fg = "black", font =('arial',10,'bold'),padx = 50, pady = 10, bd = 1)
-            self.instruction.grid(row = 7, column = 1)
+            self.instruction = Label(self, text = "Tempo total do ensaio: " + str(tempo_total) + "s",fg = "black", font =('arial',10,'bold'),padx = 50, pady = 10, bd = 1)
+            self.instruction.grid(row = 6, column = 3)
 
 
         def start(self) :
@@ -201,22 +212,24 @@ def main():
             numero_amostragem = self.numero_amostragem.get()
             portName = self.portName.get()
             numPlots = self.numPlots.get()
+            filename = self.filename.get()
 
             if erro_handler(self,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem, portName, numPlots) == False:
-                tempo_exposicao = int(tempo_exposicao)
-                tempo_recuperacao = int(tempo_recuperacao)
+                tempo_exposicao = float(tempo_exposicao)
+                tempo_recuperacao = float(tempo_recuperacao)
                 ciclos = int(ciclos)
-                numero_amostragem = int(numero_amostragem)
+                numero_amostragem = float(numero_amostragem)
                 numPlots = int(numPlots)
-                maxPlotLength = ((tempo_exposicao+tempo_recuperacao)*ciclos)+1 # Maximo valor do eixo x do grafico (tempo)
+                maxPlotLength = int(((tempo_exposicao + tempo_recuperacao)*ciclos)+1) # Maximo valor do eixo x do grafico (tempo)
                 # --------------------------------------------------
 
-                s = serialPlot(portName,baudRate,maxPlotLength,dataNumBytes,numPlots,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem)  # Inizializa todas as varivaeis necessarias para a 'classe serialPLot'
+                s = serialPlot(portName, baudRate, maxPlotLength, dataNumBytes, numPlots, tempo_exposicao, tempo_recuperacao, ciclos, numero_amostragem, filename)  # Inizializa todas as varivaeis necessarias para a 'classe serialPLot'
                 s.readSerialStart()  # Comeca o backgroundThread
 
                 # Comeca a plotar no grafico
                 # ----------------------------------------------------------------------
-                pltInterval = ((tempo_exposicao + tempo_recuperacao)/numero_amostragem)*1000  # Tempo em que e atualizado cada Plot do grafico
+                pltInterval = int(((tempo_exposicao + tempo_recuperacao)*1000//numero_amostragem)) # Tempo em que e atualizado cada Plot do grafico
+                print(pltInterval)
                 xmin = 0  # Valor minimo do X do grafico
                 xmax = maxPlotLength  # Valor maximo do X do grafico
                 ymin = 200  # Valor minimo do y do grafico
@@ -226,7 +239,8 @@ def main():
                 ax.set_title("Projeto IC")  # Titulo do grafico
                 ax.set_xlabel("Tempo")  # Titulo do eixo x
                 ax.set_ylabel("Valor em PPM")  # Titulo do eixo y
-                nframes = (tempo_exposicao + tempo_recuperacao)*ciclos//pltInterval
+                nframes = int((tempo_exposicao + tempo_recuperacao)*ciclos*1000//pltInterval)
+                print(nframes)
 
                 lineLabel = ["Sensor1", "Sensor2", "Sensor3", "Sensor4","Sensor5", "Sensor6", "Sensor7", "Sensor8","Sensor9", "Sensor10"]
                 style = ["r-", "c-", "b-", "g-","y-", "m-", "k-", "w-","p-", "s-"]  # linestyles for the different plots
@@ -247,7 +261,7 @@ def main():
 
     root = Tk()
     root.title("IC")
-    root.geometry("800x300")
+    root.geometry("900x400")
     app = Application(root)
 
     root.mainloop()
