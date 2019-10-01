@@ -46,9 +46,7 @@ class serialPlot:  # define classe serialPlot
         elif dataNumBytes == 4:
             self.dataType = "f"  # 4 byte float
         self.data = []
-        for i in range(
-            numPlots
-        ):  # give an array for each type of data and store them in a list
+        for i in range(numPlots):  # give an array for each type of data and store them in a list
             self.data.append(collections.deque([0] * plotLength, maxlen=plotLength))
         self.isRun = True
         self.isReceiving = False
@@ -65,7 +63,6 @@ class serialPlot:  # define classe serialPlot
         self.txtData = []
 
         # ----------------------
-
         # Comeca a comunicacao serial com o arduino
         print(
             "Trying to connect to: "
@@ -76,9 +73,7 @@ class serialPlot:  # define classe serialPlot
         )
         try:
             self.serialConnection = serial.Serial(serialPort, serialBaud, timeout=4)
-            print(
-                "Connected to " + str(serialPort) + " at " + str(serialBaud) + " BAUD."
-            )
+            print("Connected to " + str(serialPort) + " at " + str(serialBaud) + " BAUD.")
         except:
             print(
                 "Failed to connect with "
@@ -279,32 +274,14 @@ def main():
             self.filename = Entry(self)
             self.filename.grid(row=6, column=1, sticky=W)
 
-            self.simulation_button = Button(
-                self,
-                text="Tempo total",
-                command=self.simulation,
-                fg="black",
-                font=("arial", 10, "bold"),
-                padx=50,
-                pady=10,
-                bd=1,
-            )
+            self.simulation_button = Button(self,text="Tempo total",command=self.simulation,fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.simulation_button.grid(row=7, column=2, sticky=W)
 
-            self.start_button = Button(
-                self,
-                text="Start",
-                command=self.start,
-                fg="black",
-                font=("arial", 10, "bold"),
-                padx=50,
-                pady=10,
-                bd=1,
-            )
+            self.start_button = Button(self,text="Start",command=self.start,fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.start_button.grid(row=7, column=1, sticky=W)
 
         def simulation(self):
-            tempo_exposicao = self.Tempo_liberacao.get()
+            tempo_exposicao = self.Tempo_exposicao.get()
             tempo_recuperacao = self.Tempo_recuperacao.get()
             ciclos = self.ciclos.get()
             numero_amostragem = self.numero_amostragem.get()
@@ -312,21 +289,39 @@ def main():
             filename = self.filename.get()
             numPlots = self.numPlots.get()
 
+
             if (erro_handler(self,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem,portName,numPlots,)== False):
                 tempo_exposicao = int(tempo_exposicao)
                 tempo_recuperacao = int(tempo_recuperacao)
                 ciclos = int(ciclos)
                 numero_amostragem = int(numero_amostragem)
                 tempo_total = (tempo_exposicao + tempo_recuperacao) * ciclos
-                self.instruction = Label(
-                    self,
-                    text="Tempo total do ensaio: " + str(tempo_total) + "s",
-                    fg="black",
-                    font=("arial", 10, "bold"),
-                    padx=50,
-                    pady=10,
-                    bd=1,
-                )
+                maxPlotLength = int(((tempo_exposicao + tempo_recuperacao) * ciclos) + 1)  # Maximo valor do eixo x do grafico (tempo) em segundos
+                # if tempo_total < 60:#segundo
+                #     tempo_sec = tempo_total
+                #     tempo_day = 00
+                #     tempo_hour = 00
+                #     tempo_min = 00
+                #     # unity = 'sec'
+                # elif tempo_total >= 60 and tempo_total < 3600 :#minuto
+                #     tempo_sec = tempo_total%60
+                #     tempo_min = tempo_total//60
+                #     tempo_day = 00
+                #     tempo_hour = 00
+                #     # unity == 'min'
+                # elif tempo_total >= 3600 and tempo_total < 86400:#hora
+                #     tempo_hour = tempo_total//3600
+                #     tempo_min = (tempo_total%3600)//60
+                #     tempo_sec = (tempo_total%3600)%60
+                #     tempo_day = 00
+                #     # unity == 'hour'
+                # elif tempo_total >= 86400:#dias
+                day = tempo_total//86400
+                hour = tempo_total%86400//3600
+                minutes = ((tempo_total%86400)%3600)//60
+                seconds = (((tempo_total%86400)%3600)%60)
+                # unity == 'days'
+                self.instruction = Label(self,text= "Tempo total d0 ensaio: %d:%d:%d:%d" % (day, hour, minutes, seconds) ,fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
                 self.instruction.grid(row=6, column=3)
 
         def start(self):
@@ -345,16 +340,15 @@ def main():
                 numPlots = int(numPlots)
                 numero_amostragem = int(numero_amostragem)
                 maxPlotLength = int(((tempo_exposicao + tempo_recuperacao) * ciclos) + 1)  # Maximo valor do eixo x do grafico (tempo) em segundos
+                if maxPlotLength < 60:
+                    unity = 'sec'
+                elif maxPlotLength >= 60 and maxPlotLength < 3600 :
+                    unity == 'min'
+                elif maxPlotLength >= 3600 and maxPlotLength < 86400:
+                    unity == 'hour'
+                elif maxPlotLength >= 86400:
+                    unity == 'days'
                 print(str(maxPlotLength))
-                def getUnity (maxPlotLength):
-                    if maxPlotLength < 60:
-                        unity = 'sec'
-                    elif maxPlotLength >= 60 and maxPlotLength < 3600 :
-                        unity == 'min'
-                    elif maxPlotLength >= 3600 and maxPlotLength < 86400:
-                        unity == 'hour'
-                    elif maxPlotLength >= 86400:
-                        unity == 'days'
                     # elif maxPlotLength < 60:
                     #     unity == 'min'
                     # elif maxPlotLength < 60:
@@ -389,18 +383,7 @@ def main():
                 ax.set_ylabel("Valor em PPM")  # Titulo do eixo y
                 nframes = int((tempo_exposicao + tempo_recuperacao)*ciclos*1000//pltInterval)
 
-                lineLabel = [
-                    "Sensor1",
-                    "Sensor2",
-                    "Sensor3",
-                    "Sensor4",
-                    "Sensor5",
-                    "Sensor6",
-                    "Sensor7",
-                    "Sensor8",
-                    "Sensor9",
-                    "Sensor10",
-                ]
+                lineLabel = ["Sensor1","Sensor2","Sensor3","Sensor4","Sensor5","Sensor6","Sensor7","Sensor8","Sensor9","Sensor10",]
                 style = ["r-","c-","b-","g-","y-","m-","k-","w-","p-","s-",]  # linestyles for the different plots
                 timeText = ax.text(0.50, 0.95, "", transform=ax.transAxes)
                 lines = []
@@ -433,40 +416,17 @@ def main():
     root.mainloop()
 
 
-def erro_handler(
-    self,
-    tempo_exposicao="",
-    tempo_recuperacao="",
-    ciclos="",
-    numero_amostragem="",
-    portName="",
-    numPlots="",
-):
+def erro_handler(self,tempo_exposicao="",tempo_recuperacao="",ciclos="",numero_amostragem="",portName="",numPlots="",):
     if (tempo_exposicao == ""or tempo_recuperacao == ""or ciclos == ""or numero_amostragem == ""or portName == ""or numPlots == ""):
-        erro = Label(
-            self,
-            text="É preciso completar todos os espaços em branco",
-            fg="black",
-            font=("arial", 10, "bold"),
-        )
+        erro = Label(self,text="É preciso completar todos os espaços em branco",fg="black",font=("arial", 10, "bold"),)
         erro.grid(row=6, column=3)
         return True
     elif int(numPlots) > 10:
-        erro = Label(
-            self,
-            text="Passou o numero máximo de sensores",
-            fg="black",
-            font=("arial", 10, "bold"),
-        )
+        erro = Label(self,text="Passou o numero máximo de sensores",fg="black",font=("arial", 10, "bold"),)
         erro.grid(row=5, column=3)
         return True
     else:
-        erro = Label(
-            self,
-            text="Completar todos os espaços em branco",
-            fg="black",
-            font=("arial", 10, "bold"),
-        )
+        erro = Label(self,text="Completar todos os espaços em branco",fg="black",font=("arial", 10, "bold"),)
         erro.grid(row=5, column=3)
         erro.grid_remove()
         return False
