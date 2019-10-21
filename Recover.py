@@ -64,24 +64,12 @@ class serialPlot:  # define classe serialPlot
 
         # ----------------------
         # Comeca a comunicacao serial com o arduino
-        print(
-            "Trying to connect to: "
-            + str(serialPort)
-            + " at "
-            + str(serialBaud)
-            + " BAUD."
-        )
+        print("Trying to connect to: " + str(serialPort) + " at " + str(serialBaud) + " BAUD.")
         try:
             self.serialConnection = serial.Serial(serialPort, serialBaud, timeout=4)
             print("Connected to " + str(serialPort) + " at " + str(serialBaud) + " BAUD.")
         except:
-            print(
-                "Failed to connect with "
-                + str(serialPort)
-                + " at "
-                + str(serialBaud)
-                + " BAUD."
-            )
+            print("Failed to connect with " + str(serialPort) + " at " + str(serialBaud) + " BAUD.")
 
     def readSerialStart(self):
         # Envia para o arduino as entradas de tempo_exposicao, tempo_recuperacao e ciclos
@@ -102,42 +90,27 @@ class serialPlot:  # define classe serialPlot
     def getSerialData(self, frame, lines, lineValueText, lineLabel, timeText):
         # Plota no grafico o tempo e os dados recebidos dos sensores
         # --------------------------------------------------------------
-        pltCount = 0
-        unity = 'sec'
-        if unity == 'sec':
-            pltUp = 1000
-        elif unity == 'milisec':
-            pltUp = 1
-        elif unity == 'microsec':
-            pltUp = 1
-        elif unity == 'hour':
-            pltUp = 1
-        elif unity == 'min':
-            pltUp = 1
-        elif unity == 'days':
-            pltUp = 1
-        while pltCount!= self.pltInterval:
-            self.serialConnection.write(b"i;s;00000;f\n")  # Inicia a leitura do sensor analogico no arduino
-            currentTimer = time.perf_counter()
-            self.plotTimer = int((currentTimer - self.previousTimer) * 1000)  # the first reading will be erroneous
-            if self.i == 0:
-                self.tempo = 0
-                self.i = 1
-            else:
-                self.tempo = round(self.tempo + self.plotTimer / 1000, 2)
-            self.txtData.append("  " + str(self.tempo) + "  ")
-            self.previousTimer = currentTimer
-            timeText.set_text("Plot Interval = " + str(self.plotTimer) + "ms")
-            privateData = copy.deepcopy(self.rawData[:])  # so that the 3 values in our plots will be synchronized to the same sample time
-            for i in range(self.numPlots):
-                data = privateData[(i * self.dataNumBytes) : (self.dataNumBytes + i * self.dataNumBytes)]
-                value, = struct.unpack(self.dataType, data)
-                self.data[i].append(value)  # we get the latest data point and append it to our array
-                lines[i].set_data(range(self.plotMaxLength), self.data[i])
-                lineValueText[i].set_text("[" + lineLabel[i] + "] = " + str(value))
-                self.txtData.append("   " + str(value) + "  ")
-            self.txtData.append("\n")
-            pltCount = pltCount +pltUp
+        self.serialConnection.write(b"i;s;00000;f\n")  # Inicia a leitura do sensor analogico no arduino
+        currentTimer = time.perf_counter()
+        self.plotTimer = int((currentTimer - self.previousTimer) * 1000)  # the first reading will be erroneous
+        if self.i == 0:
+            self.tempo = 0
+            self.i = 1
+        else:
+            self.tempo = round(self.tempo + self.plotTimer / 1000, 2)
+        self.txtData.append("  " + str(self.tempo) + "  ")
+        self.previousTimer = currentTimer
+        self.finish_time = round(((self.tempo_exposicao + self.tempo_recuperacao)*self.ciclos)-self.tempo,2)
+        timeText.set_text("Tempo = " + str(self.tempo) + "s, Restante = " + str(self.finish_time) + "s, Plot Interval = " + str(self.plotTimer) + "ms")
+        privateData = copy.deepcopy(self.rawData[:])  # so that the 3 values in our plots will be synchronized to the same sample time
+        for i in range(self.numPlots):
+            data = privateData[(i * self.dataNumBytes) : (self.dataNumBytes + i * self.dataNumBytes)]
+            value, = struct.unpack(self.dataType, data)
+            self.data[i].append(value)  # we get the latest data point and append it to our array
+            lines[i].set_data(range(self.plotMaxLength), self.data[i])
+            lineValueText[i].set_text("[" + lineLabel[i] + "] = " + str(value))
+            self.txtData.append("   " + str(value) + "  ")
+        self.txtData.append("\n")
         # --------------------------------------------------------------
 
     def backgroundThread(self):  # Recupera `data`
@@ -176,81 +149,25 @@ def main():
             self.create_widgets()
 
         def create_widgets(self):
-            self.instruction = Label(
-                self,
-                text="Port name:",
-                fg="black",
-                font=("arial", 10, "bold"),
-                padx=50,
-                pady=10,
-                bd=1,
-            )
+            self.instruction = Label(self,text="Port name:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=0, column=0)
 
-            self.instruction = Label(
-                self,
-                text="Tempo exposição (s):",
-                fg="black",
-                font=("arial", 10, "bold"),
-                padx=50,
-                pady=10,
-                bd=1,
-            )
+            self.instruction = Label(self,text="Tempo exposição (s):",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=1, column=0)
 
-            self.instruction = Label(
-                self,
-                text="Tempo recuperção (s):",
-                fg="black",
-                font=("arial", 10, "bold"),
-                padx=50,
-                pady=10,
-                bd=1,
-            )
+            self.instruction = Label(self,text="Tempo recuperção (s):",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=2, column=0)
 
-            self.instruction = Label(
-                self,
-                text="Numero de ciclos:",
-                fg="black",
-                font=("arial", 10, "bold"),
-                padx=50,
-                pady=10,
-                bd=1,
-            )
+            self.instruction = Label(self,text="Numero de ciclos:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=3, column=0)
 
-            self.instruction = Label(
-                self,
-                text="Numero de amostragem por ciclos:",
-                fg="black",
-                font=("arial", 10, "bold"),
-                padx=50,
-                pady=10,
-                bd=1,
-            )
+            self.instruction = Label(self,text="Numero de amostragem por ciclos:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=4, column=0)
 
-            self.instruction = Label(
-                self,
-                text="Numero de sensores(max = 10):",
-                fg="black",
-                font=("arial", 10, "bold"),
-                padx=50,
-                pady=10,
-                bd=1,
-            )
+            self.instruction = Label(self,text="Numero de sensores(max = 10):",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=5, column=0)
 
-            self.instruction = Label(
-                self,
-                text="Nome do arquivo txt:",
-                fg="black",
-                font=("arial", 10, "bold"),
-                padx=50,
-                pady=10,
-                bd=1,
-            )
+            self.instruction = Label(self,text="Nome do arquivo txt:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=6, column=0)
 
             self.portName = Entry(self)
@@ -289,7 +206,6 @@ def main():
             filename = self.filename.get()
             numPlots = self.numPlots.get()
 
-
             if (erro_handler(self,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem,portName,numPlots,)== False):
                 tempo_exposicao = int(tempo_exposicao)
                 tempo_recuperacao = int(tempo_recuperacao)
@@ -297,31 +213,11 @@ def main():
                 numero_amostragem = int(numero_amostragem)
                 tempo_total = (tempo_exposicao + tempo_recuperacao) * ciclos
                 maxPlotLength = int(((tempo_exposicao + tempo_recuperacao) * ciclos) + 1)  # Maximo valor do eixo x do grafico (tempo) em segundos
-                # if tempo_total < 60:#segundo
-                #     tempo_sec = tempo_total
-                #     tempo_day = 00
-                #     tempo_hour = 00
-                #     tempo_min = 00
-                #     # unity = 'sec'
-                # elif tempo_total >= 60 and tempo_total < 3600 :#minuto
-                #     tempo_sec = tempo_total%60
-                #     tempo_min = tempo_total//60
-                #     tempo_day = 00
-                #     tempo_hour = 00
-                #     # unity == 'min'
-                # elif tempo_total >= 3600 and tempo_total < 86400:#hora
-                #     tempo_hour = tempo_total//3600
-                #     tempo_min = (tempo_total%3600)//60
-                #     tempo_sec = (tempo_total%3600)%60
-                #     tempo_day = 00
-                #     # unity == 'hour'
-                # elif tempo_total >= 86400:#dias
                 day = tempo_total//86400
                 hour = tempo_total%86400//3600
                 minutes = ((tempo_total%86400)%3600)//60
                 seconds = (((tempo_total%86400)%3600)%60)
-                # unity == 'days'
-                self.instruction = Label(self,text= "Tempo total d0 ensaio: %d:%d:%d:%d" % (day, hour, minutes, seconds) ,fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+                self.instruction = Label(self,text= "Tempo total do ensaio: %d:%d:%d:%d s" % (day, hour, minutes, seconds) ,fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
                 self.instruction.grid(row=6, column=3)
 
         def start(self):
@@ -339,21 +235,10 @@ def main():
                 ciclos = int(ciclos)
                 numPlots = int(numPlots)
                 numero_amostragem = int(numero_amostragem)
-                maxPlotLength = int(((tempo_exposicao + tempo_recuperacao) * ciclos) + 1)  # Maximo valor do eixo x do grafico (tempo) em segundos
-                if maxPlotLength < 60:
-                    unity = 'sec'
-                elif maxPlotLength >= 60 and maxPlotLength < 3600 :
-                    unity == 'min'
-                elif maxPlotLength >= 3600 and maxPlotLength < 86400:
-                    unity == 'hour'
-                elif maxPlotLength >= 86400:
-                    unity == 'days'
-                print(str(maxPlotLength))
-                    # elif maxPlotLength < 60:
-                    #     unity == 'min'
-                    # elif maxPlotLength < 60:
-                    #     unity == 'days'
                 pltInterval = int(((tempo_exposicao + tempo_recuperacao)*1000//numero_amostragem))  # Tempo em que e atualizado cada Plot do grafico
+
+                nframes = int((tempo_exposicao + tempo_recuperacao)*ciclos*1000//pltInterval)
+                maxPlotLength = nframes+1  # Maximo valor do eixo x do grafico (tempo) em segundos
                 # --------------------------------------------------
 
                 s = serialPlot(
@@ -379,9 +264,10 @@ def main():
                 fig = plt.figure()
                 ax = plt.axes(xlim=(xmin, xmax), ylim=(ymin, ymax))
                 ax.set_title("Projeto IC")  # Titulo do grafico
-                ax.set_xlabel("Tempo")  # Titulo do eixo x
+                ax.set_xlabel("Numero de plots")  # Titulo do eixo x
                 ax.set_ylabel("Valor em PPM")  # Titulo do eixo y
-                nframes = int((tempo_exposicao + tempo_recuperacao)*ciclos*1000//pltInterval)
+                print(nframes)
+                print(maxPlotLength)
 
                 lineLabel = ["Sensor1","Sensor2","Sensor3","Sensor4","Sensor5","Sensor6","Sensor7","Sensor8","Sensor9","Sensor10",]
                 style = ["r-","c-","b-","g-","y-","m-","k-","w-","p-","s-",]  # linestyles for the different plots
@@ -390,17 +276,8 @@ def main():
                 lineValueText = []
                 for i in range(numPlots):
                     lines.append(ax.plot([], [], style[i], label=lineLabel[i])[0])
-                    lineValueText.append(
-                        ax.text(0.70, 0.90 - i * 0.05, "", transform=ax.transAxes)
-                    )
-                anim = animation.FuncAnimation(
-                    fig,
-                    s.getSerialData,
-                    fargs=(lines, lineValueText, lineLabel, timeText),
-                    interval=pltInterval,
-                    frames = nframes,
-                    repeat = False
-                )  # Envia as variaveis para plotar o grafico
+                    lineValueText.append(ax.text(0.70, 0.90 - i * 0.05, "", transform=ax.transAxes))
+                anim = animation.FuncAnimation(fig,s.getSerialData,fargs=(lines, lineValueText, lineLabel, timeText),interval = pltInterval,frames = nframes,repeat = False)  # Envia as variaveis para plotar o grafico
 
                 plt.legend(loc="upper left")  # Local da legenda no graafico
                 plt.show()
