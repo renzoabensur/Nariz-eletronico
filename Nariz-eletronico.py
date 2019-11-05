@@ -98,18 +98,30 @@ class serialPlot:  # define classe serialPlot
             self.i = 1
         else:
             self.tempo = round(self.tempo + self.plotTimer / 1000, 2)
-        self.txtData.append("  " + str(self.tempo) + "  ")
         self.previousTimer = currentTimer
         self.finish_time = round(((self.tempo_exposicao + self.tempo_recuperacao)*self.ciclos)-self.tempo,2)
-        timeText.set_text("Tempo = " + str(self.tempo) + "s, Restante = " + str(self.finish_time) + "s, Plot Interval = " + str(self.plotTimer) + "ms")
+
+        day_total = self.tempo//86400
+        hour_total = self.tempo%86400//3600
+        minutes_total = ((self.tempo%86400)%3600)//60
+        seconds_total = (((self.tempo%86400)%3600)%60)
+
+        day_finish =  self.finish_time//86400
+        hour_finish =  self.finish_time%86400//3600
+        minutes_finish = ((self.finish_time%86400)%3600)//60
+        seconds_finish = (((self.finish_time%86400)%3600)%60)
+
+        timeText.set_text("Tempo = %d:%d:%d:%d s" % (day_total, hour_total, minutes_total, seconds_total) + " , Restante = %d:%d:%d:%d s" % (day_finish, hour_finish, minutes_finish, seconds_finish) + " , Plot Interval = " + str(self.plotTimer) + "ms")
         privateData = copy.deepcopy(self.rawData[:])  # so that the 3 values in our plots will be synchronized to the same sample time
+
+        self.txtData.append("   %06d" %self.tempo)
         for i in range(self.numPlots):
             data = privateData[(i * self.dataNumBytes) : (self.dataNumBytes + i * self.dataNumBytes)]
             value, = struct.unpack(self.dataType, data)
             self.data[i].append(value)  # we get the latest data point and append it to our array
             lines[i].set_data(range(self.plotMaxLength), self.data[i])
             lineValueText[i].set_text("[" + lineLabel[i] + "] = " + str(value))
-            self.txtData.append("   " + str(value) + "  ")
+            self.txtData.append("       %03d"  %value + " ")
         self.txtData.append("\n")
         # --------------------------------------------------------------
 
@@ -127,7 +139,7 @@ class serialPlot:  # define classe serialPlot
         print("Disconnected...")
         file_out = open(str(self.filename) + ".txt", "a")
         file_out.writelines(
-            "Tempo    Sensor1    Sensor2    Sensor3    Sensor4    Sensor5    Sensor6    Sensor7    Sensor8    Sensor9    Sensor10 \n"
+            "   Tempo(s)    Sensor1    Sensor2    Sensor3    Sensor4    Sensor5    Sensor6    Sensor7    Sensor8    Sensor9  \n"
         )
         file_out.writelines(self.txtData)
         file_out.close()
@@ -136,7 +148,7 @@ class serialPlot:  # define classe serialPlot
 def main():
     # Codigo do usuario
     # ------------------
-    baudRate = 9600  # BaundRate do codigo em arduino
+    baudRate = 115200 # BaundRate do codigo em arduino
     dataNumBytes = 4  # Number de bytes de 1 ponto de dado
     # ------------------
 
@@ -164,7 +176,7 @@ def main():
             self.instruction = Label(self,text="Numero de amostragem por ciclos:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=4, column=0)
 
-            self.instruction = Label(self,text="Numero de sensores(max = 10):",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction = Label(self,text="Numero de sensores(max = 9):",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=5, column=0)
 
             self.instruction = Label(self,text="Nome do arquivo txt:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
@@ -238,7 +250,8 @@ def main():
                 pltInterval = int(((tempo_exposicao + tempo_recuperacao)*1000//numero_amostragem))  # Tempo em que e atualizado cada Plot do grafico
 
                 nframes = int((tempo_exposicao + tempo_recuperacao)*ciclos*1000//pltInterval)
-                maxPlotLength = nframes+1  # Maximo valor do eixo x do grafico (tempo) em segundos
+                maxPlotLength = nframes + 1  # Maximo valor do eixo x do grafico (tempo) em segundos
+
                 # --------------------------------------------------
 
                 s = serialPlot(
@@ -266,11 +279,9 @@ def main():
                 ax.set_title("Projeto IC")  # Titulo do grafico
                 ax.set_xlabel("Numero de plots")  # Titulo do eixo x
                 ax.set_ylabel("Valor em PPM")  # Titulo do eixo y
-                print(nframes)
-                print(maxPlotLength)
 
-                lineLabel = ["Sensor1","Sensor2","Sensor3","Sensor4","Sensor5","Sensor6","Sensor7","Sensor8","Sensor9","Sensor10",]
-                style = ["r-","c-","b-","g-","y-","m-","k-","w-","p-","s-",]  # linestyles for the different plots
+                lineLabel = ["Sensor1","Sensor2","Sensor3","Sensor4","Sensor5","Sensor6","Sensor7","Sensor8","Sensor9",]
+                style = ["r-","c-","b-","g-","y-","m-","k-","w-","p-",]  # linestyles for the different plots
                 timeText = ax.text(0.50, 0.95, "", transform=ax.transAxes)
                 lines = []
                 lineValueText = []
@@ -287,7 +298,7 @@ def main():
 
     root = Tk()
     root.title("IC")
-    root.geometry("900x400")
+    root.geometry("1100x400")
     app = Application(root)
 
     root.mainloop()
@@ -298,7 +309,7 @@ def erro_handler(self,tempo_exposicao="",tempo_recuperacao="",ciclos="",numero_a
         erro = Label(self,text="É preciso completar todos os espaços em branco",fg="black",font=("arial", 10, "bold"),)
         erro.grid(row=6, column=3)
         return True
-    elif int(numPlots) > 10:
+    elif int(numPlots) > 9:
         erro = Label(self,text="Passou o numero máximo de sensores",fg="black",font=("arial", 10, "bold"),)
         erro.grid(row=5, column=3)
         return True

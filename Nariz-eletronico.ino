@@ -6,6 +6,15 @@
 #define OPEN 1
 #define CLOSE 0
 
+#define FASTADC 1
+
+// defines for setting and clearing register bits
+#ifndef cbi
+#define cbi(sfr, bit) (_SFR_BYTE(sfr) &= ~_BV(bit))
+#endif
+#ifndef sbi
+#define sbi(sfr, bit) (_SFR_BYTE(sfr) |= _BV(bit))
+#endif
 // Declaracao das variaveis
 //----------------------------------------------------------
 static uint32_t ticks = 0;
@@ -24,20 +33,20 @@ float valor_sensor6 = 0;
 float valor_sensor7 = 0;
 float valor_sensor8 = 0;
 float valor_sensor9 = 0;                   // Valor recebido do sensor
-float valor_sensor10 = 0;
 
-float pinSensor1 = A0;                     // Pino do sensor de gas
-float pinSensor2 = A1;
-float pinSensor3 = A2;
-float pinSensor4 = A3;
-float pinSensor5 = A4;
-float pinSensor6 = A5;
-float pinSensor7 = A6;
-float pinSensor8 = A7;
-float pinSensor9 = A8;
-float pinSensor10 = A9;
 
-float valor_sensor_voltage1= 0.0;         // Valor do sensor em Volts
+float pinSensor1 = A1;                     // Pino do sensor de gas
+float pinSensor2 = A2;
+float pinSensor3 = A3;
+float pinSensor4 = A4;
+float pinSensor5 = A5;
+float pinSensor6 = A6;
+float pinSensor7 = A7;
+float pinSensor8 = A8;
+float pinSensor9 = A9;
+
+
+float valor_sensor_voltage1 = 0.0;         // Valor do sensor em Volts
 float valor_sensor_voltage2 = 0.0;
 float valor_sensor_voltage3 = 0.0;
 float valor_sensor_voltage4 = 0.0;
@@ -46,7 +55,6 @@ float valor_sensor_voltage6 = 0.0;
 float valor_sensor_voltage7 = 0.0;
 float valor_sensor_voltage8 = 0.0;
 float valor_sensor_voltage9 = 0.0;
-float valor_sensor_voltage10 = 0.0;
 
 bool libera = true;                       // Verdadeiro se estiver liberando gas e false se estiver nao estiver liberando gas
 bool recupera = false;                    // 
@@ -61,13 +69,18 @@ float valor_ppm6 = 0;
 float valor_ppm7 = 0;
 float valor_ppm8 = 0;
 float valor_ppm9 = 0;
-float valor_ppm10 = 0;
+
 //----------------------------------------------------------
 
 // Seta os pinos e a leitura serial
 //--------------------------------------------------------------------------------------
 void setup() {
-  Serial.begin(9600);                    // Baund Rate da leitura serial
+  // set prescale to 16
+  sbi(ADCSRA,ADPS2) ;
+  cbi(ADCSRA,ADPS1) ;
+  cbi(ADCSRA,ADPS0) ;
+
+  Serial.begin(115200);                    // Baund Rate da leitura serial
   pinMode(12, OUTPUT);                   // Seta o pino 12 como output
   pinMode(13, OUTPUT);                   // Seta o pino 13 como output
   digitalWrite(VALVULA_CLOSE, OPEN);    // Comeca com a valvula do pino 12 fechada
@@ -84,7 +97,7 @@ void loop() {
 
   if(start_command){                                                           // Entra no `if` caso o `start_command` for `True`
       reset_timer();                                                           // Reseta o timer     
-      while ( ciclos >= count) {                                               // Inicia os ciclos de liberacao e recuperacao de gas
+      while ( ciclos >= count ) {                                               // Inicia os ciclos de liberacao e recuperacao de gas
         if(get_timer() > time_liberacao_ms*1000 && libera){
             liberacao();                                                       // Chama a funcao liberacao
             libera = false;                                                    // Fecha a valvula de liberacao do gas
@@ -120,7 +133,7 @@ void loop() {
         valor_ppm5 = map(valor_sensor_voltage5 * 100, 0, 500, 200, 1000);   
 
         valor_sensor6 = analogRead(pinSensor6);
-        valor_sensor_voltage4 = valor_sensor6 / 1024 * 5.0;                      
+        valor_sensor_voltage6 = valor_sensor6 / 1024 * 5.0;                      
         valor_ppm6 = map(valor_sensor_voltage6 * 100, 0, 500, 200, 1000);
 
         valor_sensor7 = analogRead(pinSensor7);
@@ -135,11 +148,9 @@ void loop() {
         valor_sensor_voltage9 = valor_sensor9 / 1024 * 5.0;                      
         valor_ppm9 = map(valor_sensor_voltage9 * 100, 0, 500, 200, 1000);   
 
-        valor_sensor10 = analogRead(pinSensor10);
-        valor_sensor_voltage10 = valor_sensor10 / 1024 * 5.0;                      
-        valor_ppm10 = map(valor_sensor_voltage10 * 100, 0, 500, 200, 1000);    
+  
 
-        sendToPython(&valor_ppm1,&valor_ppm2,&valor_ppm3,&valor_ppm4,&valor_ppm5,&valor_ppm6,&valor_ppm7,&valor_ppm8,&valor_ppm9,&valor_ppm10,numPlots);                       // Envia o valor em PPM para a funcao `sendToPython`
+        sendToPython(&valor_ppm1,&valor_ppm2,&valor_ppm3,&valor_ppm4,&valor_ppm5,&valor_ppm6,&valor_ppm7,&valor_ppm8,&valor_ppm9,numPlots);                       // Envia o valor em PPM para a funcao `sendToPython`
     
     }   
   }
@@ -150,7 +161,7 @@ void loop() {
 // Funcoes 
 //---------------------------------------------------------------------------------------------------------------
 // Recebe o valor em `data` e converte este valor em binario
-void sendToPython(float* data1,float* data2,float* data3,float* data4,float* data5,float* data6,float* data7,float* data8,float* data9,float* data10, float numPlots){ // Adicionar mais sensores  `double* data2`               
+void sendToPython(float* data1,float* data2,float* data3,float* data4,float* data5,float* data6,float* data7,float* data8,float* data9,float numPlots){ // Adicionar mais sensores  `double* data2`               
   byte* byteData1 = (byte*)(data1);       // Sensor 1
   byte* byteData2 = (byte*)(data2);       // Sensor 1
   byte* byteData3 = (byte*)(data3);       // Sensor 1
@@ -160,11 +171,10 @@ void sendToPython(float* data1,float* data2,float* data3,float* data4,float* dat
   byte* byteData7 = (byte*)(data7);       // Sensor 1
   byte* byteData8 = (byte*)(data8);       // Sensor 1
   byte* byteData9 = (byte*)(data9);       // Sensor 1
-  byte* byteData10 = (byte*)(data10);       // Sensor 1
 
   numPlots = numPlots*4;
 
-  byte buf[40] = {byteData1[0], byteData1[1], byteData1[2], byteData1[3],
+  byte buf[36] = {byteData1[0], byteData1[1], byteData1[2], byteData1[3],
                   byteData2[0], byteData2[1], byteData2[2], byteData2[3],
                   byteData3[0], byteData3[1], byteData3[2], byteData3[3],
                   byteData4[0], byteData4[1], byteData4[2], byteData4[3],
@@ -172,8 +182,7 @@ void sendToPython(float* data1,float* data2,float* data3,float* data4,float* dat
                   byteData6[0], byteData6[1], byteData6[2], byteData6[3],
                   byteData7[0], byteData7[1], byteData7[2], byteData7[3],
                   byteData8[0], byteData8[1], byteData8[2], byteData8[3],
-                  byteData9[0], byteData9[1], byteData9[2], byteData9[3],
-                  byteData10[0], byteData10[1], byteData10[2], byteData10[3]};
+                  byteData9[0], byteData9[1], byteData9[2], byteData9[3]};
 //
   Serial.write(buf, numPlots);      // Buffer de x = 4(bytes) * Numero de sensores
 }
