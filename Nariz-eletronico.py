@@ -22,15 +22,16 @@ class serialPlot:  # define classe serialPlot
     def __init__(
         self,
         serialPort="COM12",
-        serialBaud=9600,
-        plotLength=100,
-        dataNumBytes=2,
-        numPlots=1,
-        tempo_exposicao=0,
-        tempo_recuperacao=0,
-        ciclos=0,
+        serialBaud = 9600,
+        plotLength = 100,
+        dataNumBytes = 2,
+        numPlots = 1,
+        sensores_desativados = 0,
+        tempo_exposicao = 0,
+        tempo_recuperacao = 0,
+        ciclos = 0,
         pltInterval = 0,
-        filename="filename",
+        filename = "filename",
     ):
         # variaveis definidas para a classe serialPlot
         # ----------------------
@@ -56,6 +57,7 @@ class serialPlot:  # define classe serialPlot
         self.tempo_exposicao = tempo_exposicao
         self.tempo_recuperacao = tempo_recuperacao
         self.ciclos = ciclos
+        self.sensores_desativados = sensores_desativados
         self.pltInterval = pltInterval
         self.tempo = 0
         self.i = 0
@@ -78,7 +80,7 @@ class serialPlot:  # define classe serialPlot
         self.serialConnection.write(f"i;l;{self.tempo_exposicao:05d};f\n".encode())
         self.serialConnection.write(f"i;r;{self.tempo_recuperacao:05d};f\n".encode())
         self.serialConnection.write(f"i;c;{self.ciclos:05d};f\n".encode())
-        self.serialConnection.write(f"i;n;{self.numPlots:05d};f\n".encode())
+        self.serialConnection.write(f"i;n;{self.sensores_desativados:05d};f\n".encode())
         # ---------------------------------------------------------------------------
 
         if self.thread == None:
@@ -176,7 +178,7 @@ def main():
             self.instruction = Label(self,text="Numero de amostragem por ciclos:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=4, column=0)
 
-            self.instruction = Label(self,text="Numero de sensores(max = 9):",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction = Label(self,text="Sensores desativados:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=5, column=0)
 
             self.instruction = Label(self,text="Nome do arquivo txt:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
@@ -197,8 +199,8 @@ def main():
             self.numero_amostragem = Entry(self)
             self.numero_amostragem.grid(row=4, column=1, sticky=W)
 
-            self.numPlots = Entry(self)
-            self.numPlots.grid(row=5, column=1, sticky=W)
+            self.sensores_desativados = Entry(self)
+            self.sensores_desativados.grid(row=5, column=1, sticky=W)
 
             self.filename = Entry(self)
             self.filename.grid(row=6, column=1, sticky=W)
@@ -216,9 +218,10 @@ def main():
             numero_amostragem = self.numero_amostragem.get()
             portName = self.portName.get()
             filename = self.filename.get()
-            numPlots = self.numPlots.get()
+            sensores_desativados = self.sensores_desativados.get()
+            numPlots = 9
 
-            if (erro_handler(self,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem,portName,numPlots,)== False):
+            if (erro_handler(self,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem,portName,sensores_desativados,)== False):
                 tempo_exposicao = int(tempo_exposicao)
                 tempo_recuperacao = int(tempo_recuperacao)
                 ciclos = int(ciclos)
@@ -239,13 +242,14 @@ def main():
             numero_amostragem = self.numero_amostragem.get()
             portName = self.portName.get()
             filename = self.filename.get()
-            numPlots = self.numPlots.get()
+            sensores_desativados = self.sensores_desativados.get()
+            numPlots = 9
 
-            if (erro_handler(self,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem,portName,numPlots,)== False):
+            if (erro_handler(self,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem,portName,sensores_desativados,)== False):
                 tempo_exposicao = int(tempo_exposicao)#segundos
                 tempo_recuperacao = int(tempo_recuperacao)#segundos
                 ciclos = int(ciclos)
-                numPlots = int(numPlots)
+                sensores_desativados = int(sensores_desativados)
                 numero_amostragem = int(numero_amostragem)
                 pltInterval = int(((tempo_exposicao + tempo_recuperacao)*1000//numero_amostragem))  # Tempo em que e atualizado cada Plot do grafico
 
@@ -260,6 +264,7 @@ def main():
                     maxPlotLength,
                     dataNumBytes,
                     numPlots,
+                    sensores_desativados,
                     tempo_exposicao,
                     tempo_recuperacao,
                     ciclos,
@@ -308,10 +313,6 @@ def erro_handler(self,tempo_exposicao="",tempo_recuperacao="",ciclos="",numero_a
     if (tempo_exposicao == ""or tempo_recuperacao == ""or ciclos == ""or numero_amostragem == ""or portName == ""or numPlots == ""):
         erro = Label(self,text="É preciso completar todos os espaços em branco",fg="black",font=("arial", 10, "bold"),)
         erro.grid(row=6, column=3)
-        return True
-    elif int(numPlots) > 9:
-        erro = Label(self,text="Passou o numero máximo de sensores",fg="black",font=("arial", 10, "bold"),)
-        erro.grid(row=5, column=3)
         return True
     else:
         erro = Label(self,text="Completar todos os espaços em branco",fg="black",font=("arial", 10, "bold"),)

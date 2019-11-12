@@ -21,7 +21,7 @@ static uint32_t ticks = 0;
 static uint32_t time_liberacao_ms = 0;    // Tempo de liberacao recebido pelo terminal
 static uint32_t time_recuperacao_ms = 0;  // Tempo de recuperacao recebido pelo terminal
 static uint32_t ciclos = 0;               // Numero de ciclos recebido pelo terminal
-float numPlots = 0;
+int desativado = 0;
 int count = 0;                            // Contagem de ciclos
 
 float valor_sensor1 = 0;                   // Valor recebido do sensor
@@ -150,7 +150,7 @@ void loop() {
 
   
 
-        sendToPython(&valor_ppm1,&valor_ppm2,&valor_ppm3,&valor_ppm4,&valor_ppm5,&valor_ppm6,&valor_ppm7,&valor_ppm8,&valor_ppm9,numPlots);                       // Envia o valor em PPM para a funcao `sendToPython`
+        sendToPython(&valor_ppm1,&valor_ppm2,&valor_ppm3,&valor_ppm4,&valor_ppm5,&valor_ppm6,&valor_ppm7,&valor_ppm8,&valor_ppm9,desativado);                       // Envia o valor em PPM para a funcao `sendToPython`
     
     }   
   }
@@ -161,7 +161,7 @@ void loop() {
 // Funcoes 
 //---------------------------------------------------------------------------------------------------------------
 // Recebe o valor em `data` e converte este valor em binario
-void sendToPython(float* data1,float* data2,float* data3,float* data4,float* data5,float* data6,float* data7,float* data8,float* data9,float numPlots){ // Adicionar mais sensores  `double* data2`               
+void sendToPython(float* data1,float* data2,float* data3,float* data4,float* data5,float* data6,float* data7,float* data8,float* data9,float desativado){ // Adicionar mais sensores  `double* data2`               
   byte* byteData1 = (byte*)(data1);       // Sensor 1
   byte* byteData2 = (byte*)(data2);       // Sensor 1
   byte* byteData3 = (byte*)(data3);       // Sensor 1
@@ -171,8 +171,62 @@ void sendToPython(float* data1,float* data2,float* data3,float* data4,float* dat
   byte* byteData7 = (byte*)(data7);       // Sensor 1
   byte* byteData8 = (byte*)(data8);       // Sensor 1
   byte* byteData9 = (byte*)(data9);       // Sensor 1
+  int sensor = 0;
+  int bytenumber = 0; 
+  
+  while(sensor != 10){
+    if(desativado == sensor){
+         if(desativado == 1){
+            while(bytenumber != 4){
+              byteData1[bytenumber] = 0;
+              bytenumber ++;           
+            }
+           }else if (desativado == 2){
+            while(bytenumber != 4){
+              byteData2[bytenumber] = 0;
+              bytenumber ++;           
+            }
+          }else if(sensor == 3){
+            while(bytenumber != 4){
+              byteData3[bytenumber] = 0;
+              bytenumber ++;           
+            }
+           }else if(sensor == 4){
+            while(bytenumber != 4){
+              byteData4[bytenumber] = 0;
+              bytenumber ++;           
+            }
+           }else if(sensor == 5){
+            while(bytenumber != 4){
+              byteData5[bytenumber] = 0;
+              bytenumber ++;           
+            }
+           }else if(sensor == 6){
+            while(bytenumber != 4){
+              byteData6[bytenumber] = 0;
+              bytenumber ++;           
+            }
+          }else if(sensor == 7){
+            while(bytenumber != 4){
+              byteData7[bytenumber] = 0;
+              bytenumber ++;           
+            }
+          }else if(sensor == 8){
+            while(bytenumber != 4){
+              byteData8[bytenumber] = 0;
+              bytenumber ++;           
+            }
+          }else if(sensor == 9){
+            while(bytenumber != 4){
+              byteData9[bytenumber] = 0;
+              bytenumber ++;           
+            }
+          }
+      }
+    sensor++;
+   }
 
-  numPlots = numPlots*4;
+  
 
   byte buf[36] = {byteData1[0], byteData1[1], byteData1[2], byteData1[3],
                   byteData2[0], byteData2[1], byteData2[2], byteData2[3],
@@ -184,7 +238,7 @@ void sendToPython(float* data1,float* data2,float* data3,float* data4,float* dat
                   byteData8[0], byteData8[1], byteData8[2], byteData8[3],
                   byteData9[0], byteData9[1], byteData9[2], byteData9[3]};
 //
-  Serial.write(buf, numPlots);      // Buffer de x = 4(bytes) * Numero de sensores
+  Serial.write(buf, 36);      // Buffer de x = 4(bytes) * Numero de sensores
 }
 
 // Recebe os dados do Python
@@ -215,10 +269,10 @@ void parse_serial(){
     }
 
     case 'n': {
-      numPlots = value;
+      desativado = value;
       break;
     }
-
+  
     case 's': {
       start_command = true;                           // Inicia a leitura PPM no loop principal
       break;
