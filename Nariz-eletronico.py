@@ -10,6 +10,8 @@ import pandas as pd
 import csv
 from pathlib import Path
 from tkinter import *
+import tkinter as tk
+
 
 plt.style.use("seaborn-ticks")  # Seleciona o estilo do grafico
 # ['seaborn-ticks', 'ggplot', 'dark_background', 'bmh', 'seaborn-poster','seaborn-muted', '_classic_test',
@@ -32,6 +34,7 @@ class serialPlot:  # define classe serialPlot
         ciclos = 0,
         pltInterval = 0,
         filename = "filename",
+        option = 0,
     ):
         # variaveis definidas para a classe serialPlot
         # ----------------------
@@ -61,8 +64,10 @@ class serialPlot:  # define classe serialPlot
         self.pltInterval = pltInterval
         self.tempo = 0
         self.i = 0
+        self.mili_sec = 0
         self.filename = filename
         self.txtData = []
+        self.option = option
 
         # ----------------------
         # Comeca a comunicacao serial com o arduino
@@ -80,6 +85,7 @@ class serialPlot:  # define classe serialPlot
         self.serialConnection.write(f"i;l;{self.tempo_exposicao:05d};f\n".encode())
         self.serialConnection.write(f"i;r;{self.tempo_recuperacao:05d};f\n".encode())
         self.serialConnection.write(f"i;c;{self.ciclos:05d};f\n".encode())
+        self.serialConnection.write(f"i;o;{self.option:05d};f\n".encode())
         self.serialConnection.write(f"i;n;{self.sensores_desativados:05d};f\n".encode())
         # ---------------------------------------------------------------------------
 
@@ -97,6 +103,8 @@ class serialPlot:  # define classe serialPlot
         self.plotTimer = int((currentTimer - self.previousTimer) * 1000)  # the first reading will be erroneous
         if self.i == 0:
             self.tempo = 0
+            self.plotTimer = 0
+            self.mili_sec = 0
             self.i = 1
         else:
             self.tempo = round(self.tempo + self.plotTimer / 1000, 2)
@@ -116,7 +124,12 @@ class serialPlot:  # define classe serialPlot
         timeText.set_text("Tempo = %d:%d:%d:%d s" % (day_total, hour_total, minutes_total, seconds_total) + " , Restante = %d:%d:%d:%d s" % (day_finish, hour_finish, minutes_finish, seconds_finish) + " , Plot Interval = " + str(self.plotTimer) + "ms")
         privateData = copy.deepcopy(self.rawData[:])  # so that the 3 values in our plots will be synchronized to the same sample time
 
-        self.txtData.append("   %06d" %self.tempo)
+        if self.option == 1:
+            self.txtData.append("   %06d" %self.tempo)
+        elif self.option == 2:
+            self.mili_sec = self.plotTimer + self.mili_sec
+            self.txtData.append("   %07d" %self.mili_sec)
+
         for i in range(self.numPlots):
             data = privateData[(i * self.dataNumBytes) : (self.dataNumBytes + i * self.dataNumBytes)]
             value, = struct.unpack(self.dataType, data)
@@ -141,7 +154,7 @@ class serialPlot:  # define classe serialPlot
         print("Disconnected...")
         file_out = open(str(self.filename) + ".txt", "a")
         file_out.writelines(
-            "   Tempo(s)    Sensor1    Sensor2    Sensor3    Sensor4    Sensor5    Sensor6    Sensor7    Sensor8    Sensor9  \n"
+            "   Tempo       Sensor1    Sensor2    Sensor3    Sensor4    Sensor5    Sensor6    Sensor7    Sensor8    Sensor9  \n"
         )
         file_out.writelines(self.txtData)
         file_out.close()
@@ -163,53 +176,63 @@ def main():
             self.create_widgets()
 
         def create_widgets(self):
+            self.option = tk.IntVar()
             self.instruction = Label(self,text="Port name:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=0, column=0)
 
-            self.instruction = Label(self,text="Tempo exposição (s):",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction = Label(self,text="Intervalo entre amostras em milisegundos ou segundos:",fg="black",font=("arial", 10, "bold"),padx=30,pady=10,bd=1,)
             self.instruction.grid(row=1, column=0)
 
-            self.instruction = Label(self,text="Tempo recuperção (s):",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction = Radiobutton(self,text="Segundos",padx = 5,variable= self.option,value = 1)
+            self.instruction.grid(row=1, column=1)
+
+            self.instruction = Radiobutton(self,text="Milisegundos",padx = 5,variable= self.option,value = 2)
+            self.instruction.grid(row=1, column=2)
+
+            self.instruction = Label(self,text="Tempo exposição (s):",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=2, column=0)
 
-            self.instruction = Label(self,text="Numero de ciclos:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction = Label(self,text="Tempo recuperção (s):",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=3, column=0)
 
-            self.instruction = Label(self,text="Numero de amostragem por ciclos:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction = Label(self,text="Numero de ciclos:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=4, column=0)
 
-            self.instruction = Label(self,text="Sensores desativados:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction = Label(self,text="Numero de amostragem por ciclos:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=5, column=0)
 
-            self.instruction = Label(self,text="Nome do arquivo txt:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction = Label(self,text="Sensores desativados:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=6, column=0)
+
+            self.instruction = Label(self,text="Nome do arquivo txt:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction.grid(row=7, column=0)
 
             self.portName = Entry(self)
             self.portName.grid(row=0, column=1, sticky=W)
 
             self.Tempo_exposicao = Entry(self)
-            self.Tempo_exposicao.grid(row=1, column=1, sticky=W)
+            self.Tempo_exposicao.grid(row=2, column=1, sticky=W)
 
             self.Tempo_recuperacao = Entry(self)
-            self.Tempo_recuperacao.grid(row=2, column=1, sticky=W)
+            self.Tempo_recuperacao.grid(row=3, column=1, sticky=W)
 
             self.ciclos = Entry(self)
-            self.ciclos.grid(row=3, column=1, sticky=W)
+            self.ciclos.grid(row=4, column=1, sticky=W)
 
             self.numero_amostragem = Entry(self)
-            self.numero_amostragem.grid(row=4, column=1, sticky=W)
+            self.numero_amostragem.grid(row=5, column=1, sticky=W)
 
             self.sensores_desativados = Entry(self)
-            self.sensores_desativados.grid(row=5, column=1, sticky=W)
+            self.sensores_desativados.grid(row=6, column=1, sticky=W)
 
             self.filename = Entry(self)
-            self.filename.grid(row=6, column=1, sticky=W)
+            self.filename.grid(row=7, column=1, sticky=W)
 
             self.simulation_button = Button(self,text="Tempo total",command=self.simulation,fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
-            self.simulation_button.grid(row=7, column=2, sticky=W)
+            self.simulation_button.grid(row=8, column=2, sticky=W)
 
             self.start_button = Button(self,text="Start",command=self.start,fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
-            self.start_button.grid(row=7, column=1, sticky=W)
+            self.start_button.grid(row=8, column=1, sticky=W)
 
         def simulation(self):
             tempo_exposicao = self.Tempo_exposicao.get()
@@ -220,6 +243,8 @@ def main():
             filename = self.filename.get()
             sensores_desativados = self.sensores_desativados.get()
             numPlots = 9
+            option = self.option.get()
+
 
             if (erro_handler(self,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem,portName,sensores_desativados,)== False):
                 tempo_exposicao = int(tempo_exposicao)
@@ -244,8 +269,9 @@ def main():
             filename = self.filename.get()
             sensores_desativados = self.sensores_desativados.get()
             numPlots = 9
+            option = self.option.get()
 
-            if (erro_handler(self,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem,portName,sensores_desativados,)== False):
+            if (erro_handler(self,tempo_exposicao,tempo_recuperacao,ciclos,numero_amostragem,portName,sensores_desativados,)== False and (option == 1 or option == 2)):
                 tempo_exposicao = int(tempo_exposicao)#segundos
                 tempo_recuperacao = int(tempo_recuperacao)#segundos
                 ciclos = int(ciclos)
@@ -253,10 +279,10 @@ def main():
                 numero_amostragem = int(numero_amostragem)
                 pltInterval = int(((tempo_exposicao + tempo_recuperacao)*1000//numero_amostragem))  # Tempo em que e atualizado cada Plot do grafico
 
-                nframes = int((tempo_exposicao + tempo_recuperacao)*ciclos*1000//pltInterval)
+                nframes = int((tempo_exposicao + tempo_recuperacao)*(ciclos+1)*1000//pltInterval)
                 maxPlotLength = nframes + 1  # Maximo valor do eixo x do grafico (tempo) em segundos
 
-                # --------------------------------------------------
+                # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
                 s = serialPlot(
                     portName,
@@ -270,6 +296,7 @@ def main():
                     ciclos,
                     pltInterval,
                     filename,
+                    option,
                 )  # Inizializa todas as varivaeis necessarias para a 'classe serialPLot'
                 s.readSerialStart()  # Comeca o backgroundThread
 
@@ -310,7 +337,7 @@ def main():
 
 
 def erro_handler(self,tempo_exposicao="",tempo_recuperacao="",ciclos="",numero_amostragem="",portName="",numPlots="",):
-    if (tempo_exposicao == ""or tempo_recuperacao == ""or ciclos == ""or numero_amostragem == ""or portName == ""or numPlots == ""):
+    if (tempo_exposicao == ""or tempo_recuperacao == ""or ciclos == ""or numero_amostragem == ""or portName == ""or numPlots == "" ):
         erro = Label(self,text="É preciso completar todos os espaços em branco",fg="black",font=("arial", 10, "bold"),)
         erro.grid(row=6, column=3)
         return True

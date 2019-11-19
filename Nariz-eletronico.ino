@@ -20,9 +20,12 @@
 static uint32_t ticks = 0;
 static uint32_t time_liberacao_ms = 0;    // Tempo de liberacao recebido pelo terminal
 static uint32_t time_recuperacao_ms = 0;  // Tempo de recuperacao recebido pelo terminal
+static uint32_t time_liberacao = 0;    // Tempo de liberacao recebido pelo terminal
+static uint32_t time_recuperacao = 0;  // Tempo de recuperacao recebido pelo terminal
 static uint32_t ciclos = 0;               // Numero de ciclos recebido pelo terminal
 int desativado = 0;
 int count = 0;                            // Contagem de ciclos
+int option = 0;
 
 float valor_sensor1 = 0;                   // Valor recebido do sensor
 float valor_sensor2 = 0;
@@ -34,7 +37,6 @@ float valor_sensor7 = 0;
 float valor_sensor8 = 0;
 float valor_sensor9 = 0;                   // Valor recebido do sensor
 
-
 float pinSensor1 = A1;                     // Pino do sensor de gas
 float pinSensor2 = A2;
 float pinSensor3 = A3;
@@ -44,7 +46,6 @@ float pinSensor6 = A6;
 float pinSensor7 = A7;
 float pinSensor8 = A8;
 float pinSensor9 = A9;
-
 
 float valor_sensor_voltage1 = 0.0;         // Valor do sensor em Volts
 float valor_sensor_voltage2 = 0.0;
@@ -83,8 +84,8 @@ void setup() {
   Serial.begin(115200);                    // Baund Rate da leitura serial
   pinMode(12, OUTPUT);                   // Seta o pino 12 como output
   pinMode(13, OUTPUT);                   // Seta o pino 13 como output
-  digitalWrite(VALVULA_CLOSE, OPEN);    // Comeca com a valvula do pino 12 fechada
-  digitalWrite(VALVULA_OPEN, CLOSE);      // Comeca com a valvula do pino 13 aberta
+  digitalWrite(VALVULA_CLOSE, CLOSE);    // OPEN expondo CLOSE recuperacao
+  digitalWrite(VALVULA_OPEN, OPEN);      // OPEN recuperacao CLOSE exposicao
 }
 //--------------------------------------------------------------------------------------
 
@@ -97,14 +98,21 @@ void loop() {
 
   if(start_command){                                                           // Entra no `if` caso o `start_command` for `True`
       reset_timer();                                                           // Reseta o timer     
+      if(option == 1){
+        time_recuperacao = time_recuperacao_ms;
+        time_liberacao = time_liberacao_ms;
+      }else if(option == 2){
+         time_recuperacao = time_recuperacao_ms*1000;
+         time_liberacao = time_liberacao_ms*1000;
+      }
       while ( ciclos >= count ) {                                               // Inicia os ciclos de liberacao e recuperacao de gas
-        if(get_timer() > time_liberacao_ms*1000 && libera){
+        if(get_timer() > time_recuperacao && libera){
             liberacao();                                                       // Chama a funcao liberacao
             libera = false;                                                    // Fecha a valvula de liberacao do gas
             recupera = true;              
             reset_timer();                                                     // Reseta o timer
           }
-          if(get_timer() > time_recuperacao_ms*1000 && recupera){
+          if(get_timer() > time_liberacao && recupera){
             recuperacao();                                                     // Chama a funcao recuperacao
             recupera = false;                                                  // Abre a valvula para a liberacao de gas
             libera = true;
@@ -147,8 +155,6 @@ void loop() {
         valor_sensor9 = analogRead(pinSensor9);
         valor_sensor_voltage9 = valor_sensor9 / 1024 * 5.0;                      
         valor_ppm9 = map(valor_sensor_voltage9 * 100, 0, 500, 200, 1000);   
-
-  
 
         sendToPython(&valor_ppm1,&valor_ppm2,&valor_ppm3,&valor_ppm4,&valor_ppm5,&valor_ppm6,&valor_ppm7,&valor_ppm8,&valor_ppm9,desativado);                       // Envia o valor em PPM para a funcao `sendToPython`
     
@@ -267,6 +273,11 @@ void parse_serial(){
       ciclos = value;
       break;
     }
+    
+    case 'o': {
+      option = value;
+      break;
+    }
 
     case 'n': {
       desativado = value;
@@ -282,13 +293,13 @@ void parse_serial(){
 
 // Funcao para a liberacao de gas
 void liberacao() {  
-  digitalWrite(VALVULA_OPEN, OPEN);
-  digitalWrite(VALVULA_CLOSE, CLOSE);
+  digitalWrite(VALVULA_OPEN, CLOSE);
+  digitalWrite(VALVULA_CLOSE, OPEN);
 }
 
 // Funcao para a recuperacao
 void recuperacao() {
-  digitalWrite(VALVULA_OPEN, CLOSE);
-  digitalWrite(VALVULA_CLOSE, OPEN);
+  digitalWrite(VALVULA_OPEN, OPEN);
+  digitalWrite(VALVULA_CLOSE, CLOSE);
 }
 //---------------------------------------------------------------------------------------------------------------
