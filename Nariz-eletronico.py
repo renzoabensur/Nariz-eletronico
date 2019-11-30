@@ -86,7 +86,11 @@ class serialPlot:  # define classe serialPlot
         self.serialConnection.write(f"i;r;{self.tempo_recuperacao:05d};f\n".encode())
         self.serialConnection.write(f"i;c;{self.ciclos:05d};f\n".encode())
         self.serialConnection.write(f"i;o;{self.option:05d};f\n".encode())
-        self.serialConnection.write(f"i;n;{self.sensores_desativados:05d};f\n".encode())
+
+        # data = f"i;n;{len(self.sensores_desativados)},"
+        # data += ','.join(f"{x:05d}" for x in self.sensores_desativados)
+        # data += ";f\n"
+        # self.serialConnection.write(data.encode())
         # ---------------------------------------------------------------------------
 
         if self.thread == None:
@@ -133,7 +137,7 @@ class serialPlot:  # define classe serialPlot
         for i in range(self.numPlots):
             data = privateData[(i * self.dataNumBytes) : (self.dataNumBytes + i * self.dataNumBytes)]
             value, = struct.unpack(self.dataType, data)
-            self.data[i].append(value)  # we get the latest data point and append it to our array
+            self.data[i].append(value)                                                # we get the latest data point and append it to our array
             lines[i].set_data(range(self.plotMaxLength), self.data[i])
             lineValueText[i].set_text("[" + lineLabel[i] + "] = " + str(value))
             self.txtData.append("       %03d"  %value + " ")
