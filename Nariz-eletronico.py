@@ -1,5 +1,6 @@
 from tkinter import *
 import tkinter as tk
+import time  # importa biblioteca Time
 import matplotlib.pyplot as plt  # importa biblioteca matplotlib
 import matplotlib.animation as animation
 import mypackage.Serial_acquire as serial_acquire
@@ -23,10 +24,10 @@ def main():
 
         def create_widgets(self):
             self.option = tk.IntVar()
-            self.instruction = Label(self,text="Port name:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction = Label(self,text="Qual porta:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=0, column=0)
 
-            self.instruction = Label(self,text="Intervalo entre amostras em milisegundos ou segundos:",fg="black",font=("arial", 10, "bold"),padx=30,pady=10,bd=1,)
+            self.instruction = Label(self,text="Expressar tempo em:",fg="black",font=("arial", 10, "bold"),padx=30,pady=10,bd=1,)
             self.instruction.grid(row=1, column=0)
 
             self.instruction = Radiobutton(self,text="Segundos",padx = 5,variable= self.option,value = 1)
@@ -44,14 +45,14 @@ def main():
             self.instruction = Label(self,text="Numero de ciclos:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=4, column=0)
 
-            self.instruction = Label(self,text="Numero de amostragem por ciclos:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            self.instruction = Label(self,text="Numero de leituras/ciclo:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
             self.instruction.grid(row=5, column=0)
 
-            self.instruction = Label(self,text="Sensores desativados:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
-            self.instruction.grid(row=6, column=0)
+            # self.instruction = Label(self,text="Sensores desativados:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
+            # self.instruction.grid(row=6, column=0)
 
             self.instruction = Label(self,text="Nome do arquivo txt:",fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
-            self.instruction.grid(row=7, column=0)
+            self.instruction.grid(row=6, column=0)
 
             self.portName = Entry(self)
             self.portName.grid(row=0, column=1, sticky=W)
@@ -68,17 +69,17 @@ def main():
             self.numero_amostragem = Entry(self)
             self.numero_amostragem.grid(row=5, column=1, sticky=W)
 
-            self.sensores_desativados = Entry(self)
-            self.sensores_desativados.grid(row=6, column=1, sticky=W)
+            # self.sensores_desativados = Entry(self)
+            # self.sensores_desativados.grid(row=6, column=1, sticky=W)
 
             self.filename = Entry(self)
-            self.filename.grid(row=7, column=1, sticky=W)
+            self.filename.grid(row=6, column=1, sticky=W)
 
             self.simulation_button = Button(self,text="Tempo total",command=self.simulation,fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
-            self.simulation_button.grid(row=8, column=2, sticky=W)
+            self.simulation_button.grid(row=7, column=2, sticky=W)
 
             self.start_button = Button(self,text="Start",command=self.start,fg="black",font=("arial", 10, "bold"),padx=50,pady=10,bd=1,)
-            self.start_button.grid(row=8, column=1, sticky=W)
+            self.start_button.grid(row=7, column=1, sticky=W)
 
         def simulation(self):
             tempo_exposicao = self.Tempo_exposicao.get()
@@ -87,7 +88,7 @@ def main():
             numero_amostragem = self.numero_amostragem.get()
             portName = self.portName.get()
             filename = self.filename.get()
-            sensores_desativados = self.sensores_desativados.get()
+            # sensores_desativados = self.sensores_desativados.get()
             numPlots = 9
             option = self.option.get()
 
@@ -112,7 +113,7 @@ def main():
             numero_amostragem = self.numero_amostragem.get()
             portName = self.portName.get()
             filename = self.filename.get()
-            sensores_desativados = self.sensores_desativados.get()
+            # sensores_desativados = self.sensores_desativados.get()
             numPlots = 9
             option = self.option.get()
 
@@ -120,11 +121,11 @@ def main():
             tempo_exposicao = int(tempo_exposicao)#segundos
             tempo_recuperacao = int(tempo_recuperacao)#segundos
             ciclos = int(ciclos)
-            sensores_desativados = int(sensores_desativados)
+            # sensores_desativados = int(sensores_desativados)
             numero_amostragem = int(numero_amostragem)
             pltInterval = int(((tempo_exposicao + tempo_recuperacao)*1000//numero_amostragem))  # Tempo em que e atualizado cada Plot do grafico
 
-            nframes = int((tempo_exposicao + tempo_recuperacao)*(ciclos+1)*1000//pltInterval)
+            nframes = int((((tempo_exposicao + tempo_recuperacao)*(ciclos)*1000)+10000)//pltInterval)
             maxPlotLength = nframes + 1  # Maximo valor do eixo x do grafico (tempo) em segundos
 
             # ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -135,7 +136,7 @@ def main():
                 maxPlotLength,
                 dataNumBytes,
                 numPlots,
-                sensores_desativados,
+                # sensores_desativados,
                 tempo_exposicao,
                 tempo_recuperacao,
                 ciclos,pltInterval,
@@ -156,7 +157,7 @@ def main():
             ax.set_ylabel("Valor em PPM")  # Titulo do eixo y
 
             lineLabel = ["Sensor1","Sensor2","Sensor3","Sensor4","Sensor5","Sensor6","Sensor7","Sensor8","Sensor9",]
-            style = ["r-","c-","b-","g-","y-","m-","k-","w-","p-",]  # linestyles for the different plots
+            style = ["r-","c-","b-","g-","y-","m-","k-","s-","p-",]  # linestyles for the different plots
             timeText = ax.text(0.50, 0.95, "", transform=ax.transAxes)
             lines = []
             lineValueText = []

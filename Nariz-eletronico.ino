@@ -26,6 +26,7 @@ static uint32_t time_recuperacao = 0;     // Tempo de recuperacao recebido pelo 
 static uint32_t ciclos = 0;               // Numero de ciclos recebido pelo terminal
 int count = 0;                            // Contagem de ciclos
 int option = 0;
+bool start = false;
 
 int desativado[9] = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
@@ -75,7 +76,10 @@ void loop() {
             time_recuperacao = time_recuperacao_ms * 1000;
             time_liberacao = time_liberacao_ms * 1000;
         }
+
         while (ciclos >= count) {  // Inicia os ciclos de liberacao e recuperacao de gas
+          if(get_timer() > 10000 || start == true ){
+            start == true;
             if (get_timer() > time_recuperacao && libera) {
                 liberacao();     // Chama a funcao liberacao
                 libera = false;  // Fecha a valvula de liberacao do gas
@@ -89,6 +93,7 @@ void loop() {
                 count++;        // Aumenta a contagem de ciclos em 1
                 reset_timer();  // Reseta o timer
             }
+          }
 
             for (int count_sensors = 0; count_sensors < SENSOR_QUANTITY; count_sensors++) {
                 // Leitura analogica do sensor de gas
@@ -168,10 +173,10 @@ void parse_serial() {
             break;
         }
 
-        case 'd': {
-            desativado[0] = value;
-            break;
-        }
+        // case 'd': {
+        //     desativado[0] = value;
+        //     break;
+        // }
 
         case 's': {
             start_command = true;  // Inicia a leitura PPM no loop principal

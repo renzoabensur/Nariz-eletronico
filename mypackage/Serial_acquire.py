@@ -16,7 +16,7 @@ class serialPlot:  # define classe serialPlot
         plotLength = 100,
         dataNumBytes = 2,
         numPlots = 1,
-        sensores_desativados = 0,
+        # sensores_desativados = 0,
         tempo_exposicao = 0,
         tempo_recuperacao = 0,
         ciclos = 0,
@@ -48,7 +48,7 @@ class serialPlot:  # define classe serialPlot
         self.tempo_exposicao = tempo_exposicao
         self.tempo_recuperacao = tempo_recuperacao
         self.ciclos = ciclos
-        self.sensores_desativados = sensores_desativados
+        # self.sensores_desativados = sensores_desativados
         self.pltInterval = pltInterval
         self.tempo = 0
         self.i = 0
@@ -101,7 +101,7 @@ class serialPlot:  # define classe serialPlot
         else:
             self.tempo = round(self.tempo + self.plotTimer / 1000, 2)
         self.previousTimer = currentTimer
-        self.finish_time = round(((self.tempo_exposicao + self.tempo_recuperacao)*self.ciclos)-self.tempo,2)
+        self.finish_time = round((((self.tempo_exposicao + self.tempo_recuperacao)*self.ciclos)+10)-self.tempo,2)
 
         day_total = self.tempo//86400
         hour_total = self.tempo%86400//3600
