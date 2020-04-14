@@ -5,8 +5,9 @@ import collections
 import struct
 import copy
 import pandas as pd
-import csv
+import os
 from pathlib import Path
+import shutil
 
 class serialPlot:  # define classe serialPlot
     def __init__(
@@ -150,3 +151,6 @@ class serialPlot:  # define classe serialPlot
         )
         file_out.writelines(self.txtData)
         file_out.close()
+
+        shutil.move("C:/Users/renzo/OneDrive/Documents/IC/IC_project/Nariz-eletronico/" + self.filename + ".txt", "C:/Users/renzo/OneDrive/Documents/IC/IC_project/Nariz-eletronico/Dados/" + self.filename + ".txt")
+       

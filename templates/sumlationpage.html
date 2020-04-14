@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang ="en">
+<style>
+body {
+    background-color: lightblue;
+}
+
+h1{
+    font: 35px Arial, sans-serif;
+    margin-bottom: 50px;
+}
+
+.sansserif {
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+div {
+    background-color: white;
+    border-radius: 25px;
+    border: 2px solid #73AD21;
+    padding: 20px; 
+    width: 400px;
+    height: 800px; 
+    position: absolute;
+    left: 50%;
+    transform: translate(-50%);
+}
+
+.button1 {
+  border-radius: 8px;
+  background-color: #f4511e;
+  border: none;
+  color: #FFFFFF;
+  text-align: center;
+  font-size: 24px;
+  padding: 17px;
+  width: 190px;
+  transition: all 0.5s;
+  cursor: pointer;
+  margin: 5px;
+}
+
+.button1 span {
+  cursor: pointer;
+  display: inline-block;
+  position: relative;
+  transition: 0.5s;
+}
+
+.button1 span:after {
+  content: '\00bb';
+  position: absolute;
+  opacity: 0;
+  top: 0;
+  right: -20px;
+  transition: 0.5s;
+}
+
+.button1:hover span {
+  padding-right: 20px;
+}
+
+.button1:hover span:after {
+  opacity: 1;
+  right: 0;
+}
+
+
+input[type=text] {
+  width: 100%;
+  padding: 10px 17px;
+  margin: 6px 0;
+  box-sizing: border-box;
+  border: 2px solid black;
+  border-radius: 10px;
+}
+
+/*the container must be positioned relative:*/
+.option1 {
+  border-radius: 8px;
+  padding: 10px 145px;
+  box-sizing: border-box;
+  border: 2px solid black; 
+  position: relative;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color:white;
+}
+
+.option1 select {
+  display: none; /*hide original SELECT element:*/
+}
+
+.select-selected {
+  background-color:white;
+}
+
+/*style the arrow inside the select element:*/
+.select-selected:after {
+  position: absolute;
+  content: "";
+  width: 0;
+  height: 0;
+  border-color: #fff transparent transparent transparent;
+}
+
+/*point the arrow upwards when the select box is open (active):*/
+.select-selected.select-arrow-active:after {
+  border-color: transparent transparent #fff transparent;
+}
+
+/*style the items (options), including the selected item:*/
+.select-items div,.select-selected {
+  color: #ffffff;
+  border: 1px solid transparent;
+  border-color: red;
+  cursor: pointer;
+  user-select: none;
+}
+
+/*style items (options):*/
+.select-items {
+  position: absolute;
+  background-color: white;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 99;
+}
+
+/*hide the items when the select box is closed:*/
+.select-hide {
+  display: none;
+}
+
+.select-items div:hover, .same-as-selected {
+  background-color: white;
+}
+
+</style>
+<head>
+    <div>
+        <center><h1>Nariz Eletrônico</h1></center></p>
+</head>    
+<body>
+<form method="POST">
+      <!-- <p class="sansserif">Qual porta:</p>
+        <input name = "portName" placeholder="Nome da porta ..." type="text">
+    
+        <p class="sansserif">Expressar tempo em:</p>
+        <select class="option1">
+            <option value = "1">Segundos</option>
+            <option value = "2">Milissegundos</option>
+        </select>  
+
+       <p class="sansserif">Tempo exposição (s):</p>
+       <input name = "tempo_exposicao" placeholder="Tempo ..."type="text">
+
+       <p class="sansserif">Tempo recuperação (s):</p>
+       <input name = "tempo_recuperacao" placeholder="Tempo ..."type="text">
+
+       <p class="sansserif">Numero de ciclos:</p>
+       <input name = "ciclos" placeholder="Tempo ..."type="text">
+
+       <p class="sansserif">Numero de leituras/ciclos:</p>
+       <input name = "numero_amostragem" placeholder="Tempo ..."type="text">
+
+       <p class="sansserif">Nome do arquivo txt:</p>
+       <input name = "filename" placeholder="Arquivo txt ..."type="text"><br><br><br> -->
+       <p>{{output}}</p>
+ 
+       <center><button class="button1"><a href="http://127.0.0.1:5000/"><span>Back</span></a></p></center>
+        <center><button type="submit" class="button1"><span>Start</span></button></center>
+    </div>
+</form>
+</body>
+</html>
