@@ -22,8 +22,8 @@ def main():
 
     # Entaradas do usuario sao armazenadas nas variaveis tempo_exposicao, tempo_recuperacao e ciclos
     # --------------------------------------------------
-    print("Aperte nesse link com o crtl http://127.0.0.1:5000/")
-    @app.route('/', methods=['GET'])
+    print("Com o crtl apertado entre nesse link http://127.0.0.1:5000/Nariz_Eletronico")
+    @app.route('/Nariz_Eletronico', methods=['GET'])
     def get_input():
         return render_template('homepage.html')
 
@@ -51,7 +51,7 @@ def main():
     #     seconds = (((tempo_total%86400)%3600)%60)
     #     return render_template('sumlationpage.html', output = "Tempo total do ensaio: %d:%d:%d:%d s" % (day, hour, minutes, seconds))
 
-    @app.route('/', methods=['POST'])
+    @app.route('/Nariz_eletronico', methods=['POST'])
     def start():
         portName = request.form['portName']
         tempo_exposicao = request.form['tempo_exposicao']
@@ -60,12 +60,6 @@ def main():
         numero_amostragem = request.form['numero_amostragem']
         filename = request.form['filename']
         option = request.form['expressar tempo']
-
-        if option == 'Segundos':
-            option = 1
-        else:
-            option = 2
-            
         # sensores_desativados = self.sensores_desativados.get()
         numPlots = 9
 
@@ -75,6 +69,8 @@ def main():
         ciclos = int(ciclos)
         # sensores_desativados = int(sensores_desativados)
         numero_amostragem = int(numero_amostragem)
+        option = int(option)
+
         pltInterval = int(((tempo_exposicao + tempo_recuperacao)*1000//numero_amostragem))  # Tempo em que e atualizado cada Plot do grafico
 
         nframes = int((((tempo_exposicao + tempo_recuperacao)*(ciclos)*1000)+10000)//pltInterval)

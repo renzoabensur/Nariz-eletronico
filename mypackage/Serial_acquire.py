@@ -119,9 +119,11 @@ class serialPlot:  # define classe serialPlot
 
         if self.option == 1:
             self.txtData.append("   %06d" %self.tempo)
+            self.sec = "(s)   "
         elif self.option == 2:
             self.mili_sec = self.plotTimer + self.mili_sec
             self.txtData.append("   %07d" %self.mili_sec)
+            self.sec = "(ms)  "
 
         for i in range(self.numPlots):
             data = privateData[(i * self.dataNumBytes) : (self.dataNumBytes + i * self.dataNumBytes)]
@@ -145,9 +147,11 @@ class serialPlot:  # define classe serialPlot
         self.thread.join()
         self.serialConnection.close()
         print("Disconnected...")
+        if not os.path.exists('Dados'):
+            os.makedirs('Dados')
         file_out = open(str(self.filename) + ".txt", "a")
         file_out.writelines(
-            "   Tempo       Sensor1    Sensor2    Sensor3    Sensor4    Sensor5    Sensor6    Sensor7    Sensor8    Sensor9  \n"
+            "   Tempo" +  self.sec   + "Sensor1    Sensor2    Sensor3    Sensor4    Sensor5    Sensor6    Sensor7    Sensor8    Sensor9  \n"
         )
         file_out.writelines(self.txtData)
         file_out.close()
