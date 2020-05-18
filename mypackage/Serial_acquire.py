@@ -21,7 +21,6 @@ class serialPlot:  # define classe serialPlot
         tempo_exposicao = 0,
         tempo_recuperacao = 0,
         ciclos = 0,
-        pltInterval = 0,
         filename = "filename",
         option = 0,
     ):
@@ -50,7 +49,6 @@ class serialPlot:  # define classe serialPlot
         self.tempo_recuperacao = tempo_recuperacao
         self.ciclos = ciclos
         # self.sensores_desativados = sensores_desativados
-        self.pltInterval = pltInterval
         self.tempo = 0
         self.i = 0
         self.mili_sec = 0
